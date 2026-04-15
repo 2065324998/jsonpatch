@@ -8,6 +8,22 @@ element of the array at doc["foo"]["bar"].
 from .exceptions import JsonPointerError
 
 
+def escape_token(token):
+    """Escape a JSON Pointer reference token per RFC 6901.
+
+    The '~' character must be escaped as '~0' in reference tokens.
+    """
+    return str(token).replace("~", "~0")
+
+
+def unescape_token(token):
+    """Unescape a JSON Pointer reference token per RFC 6901.
+
+    Converts '~0' back to '~' in reference tokens.
+    """
+    return token.replace("~0", "~")
+
+
 class JsonPointer:
     """Represents a parsed JSON Pointer (RFC 6901).
 
@@ -38,8 +54,8 @@ class JsonPointer:
                 f"JSON Pointer must start with '/' or be empty: {path!r}"
             )
 
-        # Split into reference tokens
-        self.parts = path.split("/")[1:]
+        # Split into reference tokens and unescape per RFC 6901
+        self.parts = [unescape_token(p) for p in path.split("/")[1:]]
 
     def resolve(self, doc):
         """Resolve this pointer against a JSON document.

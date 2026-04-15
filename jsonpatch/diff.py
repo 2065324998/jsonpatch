@@ -6,6 +6,8 @@ operations that transform the source into the destination.
 
 from typing import Any
 
+from .pointer import escape_token
+
 
 def diff(src: Any, dst: Any, path: str = "") -> list[dict]:
     """Generate a JSON Patch diff between two values.
@@ -60,24 +62,24 @@ def _diff_dicts(src: dict, dst: dict, path: str) -> list[dict]:
     for from_key, to_key, _ in moves:
         ops.append({
             "op": "move",
-            "from": f"{path}/{from_key}",
-            "path": f"{path}/{to_key}",
+            "from": f"{path}/{escape_token(from_key)}",
+            "path": f"{path}/{escape_token(to_key)}",
         })
 
-    # Remove keys (excluding those involved in moves)
-    for key in sorted(removed_keys - moved_from):
-        ops.append({"op": "remove", "path": f"{path}/{key}"})
+    # Remove keys
+    for key in sorted(removed_keys):
+        ops.append({"op": "remove", "path": f"{path}/{escape_token(key)}"})
 
     # Recurse into modified keys
     for key in sorted(common_keys):
         if src[key] != dst[key]:
-            ops.extend(diff(src[key], dst[key], f"{path}/{key}"))
+            ops.extend(diff(src[key], dst[key], f"{path}/{escape_token(key)}"))
 
-    # Add new keys (excluding those involved in moves)
-    for key in sorted(added_keys - moved_to):
+    # Add new keys
+    for key in sorted(added_keys):
         ops.append({
             "op": "add",
-            "path": f"{path}/{key}",
+            "path": f"{path}/{escape_token(key)}",
             "value": dst[key],
         })
 
